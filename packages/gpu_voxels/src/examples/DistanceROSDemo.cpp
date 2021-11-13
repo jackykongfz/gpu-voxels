@@ -61,7 +61,7 @@ using gpu_voxels::voxellist::CountingVoxelList;
 
 shared_ptr<GpuVoxels> gvl;
 
-Vector3ui map_dimensions(256, 256, 256);
+Vector3ui map_dimensions(5000, 256, 256);//256
 float voxel_side_length = 0.01f; // 1 cm voxel size
 
 bool new_data_received;
@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
   icl_core::config::addParameter(erode_threshold_parameter);
   icl_core::logging::initialize(argc, argv);
 	
-  voxel_side_length = icl_core::config::paramOptDefault<float>("voxel_side_length", 0.01f);
+  voxel_side_length = icl_core::config::paramOptDefault<float>("voxel_side_length", 0.05f);
 
   // setup "tf" to transform from camera to world / gpu-voxels coordinates
 
@@ -209,11 +209,11 @@ int main(int argc, char* argv[])
       new_data_received = false;
       iteration++;
 
-      pbaDistanceVoxmap->clearMap();
-      countingVoxelList->clearMap();
-      countingVoxelListFiltered->clearMap();
-      erodeTempVoxmap1->clearMap();
-      erodeTempVoxmap2->clearMap();
+      // pbaDistanceVoxmap->clearMap();
+      // countingVoxelList->clearMap();
+      // countingVoxelListFiltered->clearMap();
+      // erodeTempVoxmap1->clearMap();
+      // erodeTempVoxmap2->clearMap();
 
       // Insert the CAMERA data (now in world coordinates) into the list
       countingVoxelList->insertPointCloud(my_point_cloud, eBVM_OCCUPIED);

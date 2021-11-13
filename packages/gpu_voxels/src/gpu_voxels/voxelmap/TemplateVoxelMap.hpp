@@ -68,13 +68,13 @@ TemplateVoxelMap<Voxel>::TemplateVoxelMap(const Vector3ui dim,
                                           m_collision_check_results(NULL)
 {
   this->m_map_type = map_type;
-  if (dim.x * dim.y * dim.z * sizeof(Voxel) > (pow(2, 32) - 1))
+  if (dim.x * dim.y * dim.z * sizeof(Voxel) > (pow(2, 35) - 1))
   {
     LOGGING_ERROR_C(VoxelmapLog, VoxelMap, "Map size limited to 32 bit addressing!" << endl);
     exit(-1);
   }
 
-  if (getVoxelMapSize() * sizeof(Voxel) > (pow(2, 32) - 1))
+  if (getVoxelMapSize() * sizeof(Voxel) > (pow(2, 35) - 1))
   {
     LOGGING_ERROR_C(VoxelmapLog, VoxelMap, "Memory size is limited to 32 bit!" << endl);
     exit(-1);

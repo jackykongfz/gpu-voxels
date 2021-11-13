@@ -30,6 +30,7 @@
 
 #include <gpu_voxels/voxel/BitVoxel.h>
 #include <gpu_voxels/voxel/ProbabilisticVoxel.h>
+// #include <cub/cub.cuh>
 
 #if CUDA_VERSION < 9000
 #define CUB_NS_PREFIX namespace thrust { namespace system { namespace cuda { namespace detail {

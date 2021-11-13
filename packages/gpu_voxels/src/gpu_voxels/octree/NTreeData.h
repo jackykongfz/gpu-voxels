@@ -23,12 +23,19 @@
 #ifndef GPU_VOXELS_OCTREE_NTREEDATA_H_INCLUDED
 #define GPU_VOXELS_OCTREE_NTREEDATA_H_INCLUDED
 
+// #ifndef __CUDACC__  
+//     #define __CUDACC__
+// #endif
+
 #include <iostream>
 
 #include <gpu_voxels/octree/Nodes.h>
 //#include <gpu_voxels/octree/Voxel.h>
 #include <gpu_voxels/octree/EnvironmentNodes.h>
 #include <gpu_voxels/octree/RobotNodes.h>
+// #include <cuda.h>
+// #include <device_functions.h>
+// #include <cub/cub.cuh>
 
 //including cub.h will place all of cub in "thrust::system::cuda::detail::cub_"
 //we don't want to include all of cub here, because gcc will get confused by device code

@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
   rob_map->insertPointCloud(testpoints_rob2, eBVM_OCCUPIED);
 
 
-  for(size_t pos = 50; pos < 100; ++pos)
+  for(size_t pos = 50; pos < 51; ++pos)
   {
     // We perform the insertion and the raycasting twice, so that in the visualizer we can display either all probabilistic voxels or only the occupied ones (without the free ones)
     prob_map->insertSensorData(obstacle, Vector3f(pos, 2, pos/2.0), true, true, eBVM_OCCUPIED, rob_map->getDeviceDataPtr());

@@ -30,6 +30,7 @@ namespace cub = thrust::cuda_cub::cub;
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 #include <thrust/copy.h>
+// #include <cub/cub.cuh>
 
 #include <gpu_voxels/octree/PointCloud.h>
 #include <gpu_voxels/octree/kernels/kernel_PointCloud.h>

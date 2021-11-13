@@ -52,6 +52,7 @@
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/fill.h>
 #include <thrust/extrema.h>
+// #include <cub/cub.cuh>
 
 #if CUDA_VERSION < 9000
 #define CUB_NS_PREFIX namespace thrust { namespace system { namespace cuda { namespace detail {

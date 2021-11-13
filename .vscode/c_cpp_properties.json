@@ -1,0 +1,44 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "",
+        "limitSymbolsToIncludedHeaders": true
+      },
+      "includePath": [
+        "/home/mars/catkin_ws2/devel/include/**",
+        "/home/mars/catkin_ws/devel/include/**",
+        "/opt/ros/melodic/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/fuel_planner/active_perception/include/**",
+        "/home/mars/catkin_ws/src/data_generation/agile_autonomy/include/**",
+        "/home/mars/catkin_ws/src/data_generation/agile_autonomy_utils/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/fuel_planner/bspline/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/fuel_planner/bspline_opt/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/fuel_planner/exploration_manager/include/**",
+        "/home/mars/catkin_ws/src/lidar_calib/include/**",
+        "/home/mars/catkin_ws2/src/livox_laser_simulation/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/fuel_planner/utils/lkh_tsp_solver/include/**",
+        "/home/mars/catkin_ws/src/loam_livox/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/uav_simulator/local_sensing/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/uav_simulator/Utils/multi_map_server/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/octomap_mapping/octomap_server/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/fuel_planner/path_searching/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/fuel_planner/plan_env/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/fuel_planner/plan_manage/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/fuel_planner/poly_traj/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/uav_simulator/Utils/pose_utils/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/uav_simulator/Utils/quadrotor_msgs/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/uav_simulator/so3_control/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/uav_simulator/so3_disturbance_generator/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/uav_simulator/so3_quadrotor_simulator/include/**",
+        "/home/mars/catkin_ws/src/data_generation/traj_sampler/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/fuel_planner/traj_utils/include/**",
+        "/home/mars/catkin_ws2/src/Exploration_sim/uav_simulator/Utils/uav_utils/include/**",
+        "/home/mars/catkin_ws/src/unity_sw_mapping/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS"
+    }
+  ],
+  "version": 4
+}
