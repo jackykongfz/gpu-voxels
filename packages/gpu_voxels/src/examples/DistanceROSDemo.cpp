@@ -53,20 +53,27 @@
 #include <pcl/point_types.h>
 #include <icl_core_config/Config.h>
 
+#include <gpu_voxels/helpers/GeometryGeneration.h>
+#include <gpu_voxels/logging/logging_gpu_voxels.h>
+
 using boost::dynamic_pointer_cast;
 using boost::shared_ptr;
 using gpu_voxels::voxelmap::ProbVoxelMap;
 using gpu_voxels::voxelmap::DistanceVoxelMap;
 using gpu_voxels::voxellist::CountingVoxelList;
 
+using namespace gpu_voxels;
+using namespace voxelmap;
+
 shared_ptr<GpuVoxels> gvl;
 
-Vector3ui map_dimensions(5000, 256, 256);//256
+Vector3ui map_dimensions(256, 256, 256);//256
 float voxel_side_length = 0.01f; // 1 cm voxel size
 
 bool new_data_received;
 PointCloud my_point_cloud;
 Matrix4f tf;
+Vector3f odom;
 
 void ctrlchandler(int)
 {
@@ -104,6 +111,11 @@ void callback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg)
   new_data_received = true;
 
   LOGGING_INFO(Gpu_voxels, "DistanceROSDemo camera callback. PointCloud size: " << msg->points.size() << endl);
+}
+
+void Odomcallback(const nav_msgs::Odometry::ConstPtr& msg)
+{
+  odom = *msg;
 }
 
 int main(int argc, char* argv[])
@@ -156,6 +168,7 @@ int main(int argc, char* argv[])
   ros::init(argc, argv, "distance_ros_demo");
   ros::NodeHandle nh;
   ros::Subscriber sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZ> >(point_cloud_topic, 1, callback);
+  ros::Subscriber sub = nh.subscribe<nav_msgs::Odometry>("/state_ukf/odom", 1, Odomcallback)
 
   //Vis Helper
   gvl->addPrimitives(primitive_array::ePRIM_SPHERE, "measurementPoints");
@@ -163,6 +176,10 @@ int main(int argc, char* argv[])
   //PBA
   gvl->addMap(MT_DISTANCE_VOXELMAP, "pbaDistanceVoxmap");
   shared_ptr<DistanceVoxelMap> pbaDistanceVoxmap = dynamic_pointer_cast<DistanceVoxelMap>(gvl->getMap("pbaDistanceVoxmap"));
+
+  //raycast occupancy grid map
+  gvl->addMap(MT_PROBAB_VOXELMAP, "raycast_map");
+  shared_ptr<ProbVoxelMap> raycast_map = dynamic_pointer_cast<ProbVoxelMap>(gvl->getMap("raycast_map"));
 
   gvl->addMap(MT_PROBAB_VOXELMAP, "erodeTempVoxmap1");
   shared_ptr<ProbVoxelMap> erodeTempVoxmap1 = dynamic_pointer_cast<ProbVoxelMap>(gvl->getMap("erodeTempVoxmap1"));
@@ -192,7 +209,7 @@ int main(int argc, char* argv[])
   float erode_threshold = icl_core::config::paramOptDefault<float>("erode_threshold", 0.0f);
   std::cout << "Erode voxels with neighborhood occupancy ratio less or equal to: " << erode_threshold << std::endl;
 
-  ros::Rate r(30);
+  ros::Rate r(200);
   size_t iteration = 0;
   new_data_received = true; // call visualize on the first iteration
 
@@ -214,6 +231,8 @@ int main(int argc, char* argv[])
       // countingVoxelListFiltered->clearMap();
       // erodeTempVoxmap1->clearMap();
       // erodeTempVoxmap2->clearMap();
+
+      raycast_map->insertSensorData(my_point_cloud, odom, true, false, eBVM_OCCUPIED);
 
       // Insert the CAMERA data (now in world coordinates) into the list
       countingVoxelList->insertPointCloud(my_point_cloud, eBVM_OCCUPIED);
