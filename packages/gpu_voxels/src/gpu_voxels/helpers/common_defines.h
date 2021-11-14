@@ -152,13 +152,13 @@ enum visualizer_distance_drawmodes {
  * @brief Type for holding occupation probability
  */
 typedef int8_t Probability;
-static const Probability UNKNOWN_PROBABILITY = Probability(-128);
+static const Probability UNKNOWN_PROBABILITY = Probability(-128);//-128
 static const Probability MIN_PROBABILITY = Probability(-127);
 static const Probability MAX_PROBABILITY = Probability(127);
 
 /* ------------------ Temporary Sensor Model ------------ */
 static const Probability cSENSOR_MODEL_FREE = -10;
-static const Probability cSENSOR_MODEL_OCCUPIED = 72;
+static const Probability cSENSOR_MODEL_OCCUPIED = 90;
 
 
 // ---------------- VoxelMap ----------------------

@@ -56,6 +56,8 @@
 #include <gpu_voxels/helpers/GeometryGeneration.h>
 #include <gpu_voxels/logging/logging_gpu_voxels.h>
 
+#include <nav_msgs/Odometry.h>
+
 using boost::dynamic_pointer_cast;
 using boost::shared_ptr;
 using gpu_voxels::voxelmap::ProbVoxelMap;
@@ -67,8 +69,8 @@ using namespace voxelmap;
 
 shared_ptr<GpuVoxels> gvl;
 
-Vector3ui map_dimensions(256, 256, 256);//256
-float voxel_side_length = 0.01f; // 1 cm voxel size
+Vector3ui map_dimensions(500, 500, 500);//256
+float voxel_side_length = 0.1f; // 1 cm voxel size
 
 bool new_data_received;
 PointCloud my_point_cloud;
@@ -115,7 +117,10 @@ void callback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& msg)
 
 void Odomcallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
-  odom = *msg;
+  // odom = *msg;
+  odom.x = (*msg).pose.pose.position.x + map_dimensions.x * voxel_side_length * 0.5f;
+  odom.y = (*msg).pose.pose.position.y + map_dimensions.y * voxel_side_length * 0.5f;
+  odom.z = (*msg).pose.pose.position.z + map_dimensions.z * voxel_side_length * 0.5f;
 }
 
 int main(int argc, char* argv[])
@@ -146,17 +151,17 @@ int main(int argc, char* argv[])
   icl_core::config::addParameter(erode_threshold_parameter);
   icl_core::logging::initialize(argc, argv);
 	
-  voxel_side_length = icl_core::config::paramOptDefault<float>("voxel_side_length", 0.05f);
+  voxel_side_length = icl_core::config::paramOptDefault<float>("voxel_side_length", 0.1f);
 
   // setup "tf" to transform from camera to world / gpu-voxels coordinates
 
   //const Vector3f camera_offsets(2, 0, 1); // camera located at y=0, x_max/2, z_max/2
-  const Vector3f camera_offsets(map_dimensions.x * voxel_side_length * 0.5f, -0.2f, map_dimensions.z * voxel_side_length * 0.5f); // camera located at y=-0.2m, x_max/2, z_max/2
+  const Vector3f camera_offsets(map_dimensions.x * voxel_side_length * 0.5f, map_dimensions.y * voxel_side_length * 0.5f, map_dimensions.z * voxel_side_length * 0.5f); // camera located at y=-0.2m, x_max/2, z_max/2
 
   float roll = icl_core::config::paramOptDefault<float>("roll", 0.0f) * 3.141592f / 180.0f;
   float pitch = icl_core::config::paramOptDefault<float>("pitch", 0.0f) * 3.141592f / 180.0f;
   float yaw = icl_core::config::paramOptDefault<float>("yaw", 0.0f) * 3.141592f / 180.0f;
-  tf = Matrix4f::createFromRotationAndTranslation(Matrix3f::createFromRPY(-3.14/2.0 + roll, 0 + pitch, 0 + yaw), camera_offsets);
+  tf = Matrix4f::createFromRotationAndTranslation(Matrix3f::createFromRPY(0+ roll, 0 + pitch, 0 + yaw), camera_offsets);
 
   std::string point_cloud_topic = icl_core::config::paramOptDefault<std::string>("points-topic", "/camera/depth/points");
   LOGGING_INFO(Gpu_voxels, "DistanceROSDemo start. Point-cloud topic: " << point_cloud_topic << endl);
@@ -168,7 +173,7 @@ int main(int argc, char* argv[])
   ros::init(argc, argv, "distance_ros_demo");
   ros::NodeHandle nh;
   ros::Subscriber sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZ> >(point_cloud_topic, 1, callback);
-  ros::Subscriber sub = nh.subscribe<nav_msgs::Odometry>("/state_ukf/odom", 1, Odomcallback)
+  ros::Subscriber odom_sub = nh.subscribe<nav_msgs::Odometry>("/state_ukf/odom", 1, Odomcallback);
 
   //Vis Helper
   gvl->addPrimitives(primitive_array::ePRIM_SPHERE, "measurementPoints");
@@ -180,6 +185,9 @@ int main(int argc, char* argv[])
   //raycast occupancy grid map
   gvl->addMap(MT_PROBAB_VOXELMAP, "raycast_map");
   shared_ptr<ProbVoxelMap> raycast_map = dynamic_pointer_cast<ProbVoxelMap>(gvl->getMap("raycast_map"));
+
+  gvl->addMap(MT_BITVECTOR_VOXELMAP, "myRobotMap");
+  boost::shared_ptr<BitVectorVoxelMap> rob_map(gvl->getMap("myRobotMap")->as<BitVectorVoxelMap>());
 
   gvl->addMap(MT_PROBAB_VOXELMAP, "erodeTempVoxmap1");
   shared_ptr<ProbVoxelMap> erodeTempVoxmap1 = dynamic_pointer_cast<ProbVoxelMap>(gvl->getMap("erodeTempVoxmap1"));
@@ -232,52 +240,58 @@ int main(int argc, char* argv[])
       // erodeTempVoxmap1->clearMap();
       // erodeTempVoxmap2->clearMap();
 
-      raycast_map->insertSensorData(my_point_cloud, odom, true, false, eBVM_OCCUPIED);
+      ros::Time t1 = ros::Time::now();
 
-      // Insert the CAMERA data (now in world coordinates) into the list
-      countingVoxelList->insertPointCloud(my_point_cloud, eBVM_OCCUPIED);
-      gvl->visualizeMap("countingVoxelList");
+      raycast_map->insertSensorData(my_point_cloud, odom, true, false, eBVM_OCCUPIED,rob_map->getDeviceDataPtr());
+      gvl->visualizeMap("raycast_map");
 
-      countingVoxelListFiltered->merge(countingVoxelList);
-      countingVoxelListFiltered->remove_underpopulated(filter_threshold);
-      gvl->visualizeMap("countingVoxelListFiltered");
+      ros::Time t2 = ros::Time::now();
+      ROS_INFO("Insert time = %fs",(t2-t1).toSec());
 
-      LOGGING_INFO(Gpu_voxels, "erode voxels into pbaDistanceVoxmap" << endl);
-      erodeTempVoxmap1->merge(countingVoxelListFiltered);
-      if (erode_threshold > 0)
-      {
-        erodeTempVoxmap1->erodeInto(*erodeTempVoxmap2, erode_threshold);
-      } else
-      {
-        erodeTempVoxmap1->erodeLonelyInto(*erodeTempVoxmap2); //erode only "lonely voxels" without occupied neighbors
-      }
-      pbaDistanceVoxmap->mergeOccupied(erodeTempVoxmap2);
+      // // Insert the CAMERA data (now in world coordinates) into the list
+      // countingVoxelList->insertPointCloud(my_point_cloud, eBVM_OCCUPIED);
+      // gvl->visualizeMap("countingVoxelList");
 
-      // Calculate the distance map:
-      LOGGING_INFO(Gpu_voxels, "calculate distance map for " << countingVoxelList->getDimensions().x << " occupied voxels" << endl);
-      pbaDistanceVoxmap->parallelBanding3D();
+      // countingVoxelListFiltered->merge(countingVoxelList);
+      // countingVoxelListFiltered->remove_underpopulated(filter_threshold);
+      // gvl->visualizeMap("countingVoxelListFiltered");
 
-      LOGGING_INFO(Gpu_voxels, "start cloning pbaDistanceVoxmap" << endl);
-      pbaDistanceVoxmapVisual->clone(*(pbaDistanceVoxmap.get()));
-      LOGGING_INFO(Gpu_voxels, "done cloning pbaDistanceVoxmap" << endl);
+      // LOGGING_INFO(Gpu_voxels, "erode voxels into pbaDistanceVoxmap" << endl);
+      // erodeTempVoxmap1->merge(countingVoxelListFiltered);
+      // if (erode_threshold > 0)
+      // {
+      //   erodeTempVoxmap1->erodeInto(*erodeTempVoxmap2, erode_threshold);
+      // } else
+      // {
+      //   erodeTempVoxmap1->erodeLonelyInto(*erodeTempVoxmap2); //erode only "lonely voxels" without occupied neighbors
+      // }
+      // pbaDistanceVoxmap->mergeOccupied(erodeTempVoxmap2);
 
-      gvl->visualizeMap("pbaDistanceVoxmapVisual");
-      gvl->visualizePrimitivesArray("measurementPoints");
+      // // Calculate the distance map:
+      // LOGGING_INFO(Gpu_voxels, "calculate distance map for " << countingVoxelList->getDimensions().x << " occupied voxels" << endl);
+      // pbaDistanceVoxmap->parallelBanding3D();
 
-      // For the measurement points we query the clearance to the closest obstacle:
-      thrust::device_ptr<DistanceVoxel> dvm_thrust_ptr(pbaDistanceVoxmap->getDeviceDataPtr());
-      for(size_t i = 0; i < measurement_points.size(); i++)
-      {
-        int id = voxelmap::getVoxelIndexSigned(map_dimensions, measurement_points[i]);
+      // LOGGING_INFO(Gpu_voxels, "start cloning pbaDistanceVoxmap" << endl);
+      // pbaDistanceVoxmapVisual->clone(*(pbaDistanceVoxmap.get()));
+      // LOGGING_INFO(Gpu_voxels, "done cloning pbaDistanceVoxmap" << endl);
 
-        //get DistanceVoxel with closest obstacle information
-        // DistanceVoxel dv = dvm_thrust_ptr[id]; // worked before Cuda9
-        DistanceVoxel dv; //get DistanceVoxel with closest obstacle information
-        cudaMemcpy(&dv, (dvm_thrust_ptr+id).get(), sizeof(DistanceVoxel), cudaMemcpyDeviceToHost);
+      // gvl->visualizeMap("pbaDistanceVoxmapVisual");
+      // gvl->visualizePrimitivesArray("measurementPoints");
 
-        float metric_free_space = sqrtf(dv.squaredObstacleDistance(measurement_points[i])) * voxel_side_length;
-        LOGGING_INFO(Gpu_voxels, "Obstacle @ " << dv.getObstacle() << " Voxel @ " << measurement_points[i] << " has a clearance of " << metric_free_space << "m." << endl);
-      }
+      // // For the measurement points we query the clearance to the closest obstacle:
+      // thrust::device_ptr<DistanceVoxel> dvm_thrust_ptr(pbaDistanceVoxmap->getDeviceDataPtr());
+      // for(size_t i = 0; i < measurement_points.size(); i++)
+      // {
+      //   int id = voxelmap::getVoxelIndexSigned(map_dimensions, measurement_points[i]);
+
+      //   //get DistanceVoxel with closest obstacle information
+      //   // DistanceVoxel dv = dvm_thrust_ptr[id]; // worked before Cuda9
+      //   DistanceVoxel dv; //get DistanceVoxel with closest obstacle information
+      //   cudaMemcpy(&dv, (dvm_thrust_ptr+id).get(), sizeof(DistanceVoxel), cudaMemcpyDeviceToHost);
+
+      //   float metric_free_space = sqrtf(dv.squaredObstacleDistance(measurement_points[i])) * voxel_side_length;
+      //   LOGGING_INFO(Gpu_voxels, "Obstacle @ " << dv.getObstacle() << " Voxel @ " << measurement_points[i] << " has a clearance of " << metric_free_space << "m." << endl);
+      // }
     }
 
     r.sleep();
