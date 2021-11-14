@@ -222,7 +222,7 @@ public:
 //! raycasting from one point to another marks decreases voxel occupancy along the ray
   __device__ __forceinline__
   void rayCast(ProbabilisticVoxel* voxelmap, const Vector3ui &dimensions,
-               const Vector3ui& from, const Vector3ui& to)
+               const Vector3ui& from, const Vector3ui& to, int32_t raycast_voxel_count)
   {
     int32_t difference_x = 0;
     int32_t difference_y = 0;
@@ -288,6 +288,8 @@ public:
     // number of cells to visit
     n = 1 + difference_x + difference_y + difference_z;
 
+    raycast_voxel_count = n;
+
     // error between x- and y- difference
     error_xy = difference_x - difference_y;
 
@@ -339,6 +341,7 @@ public:
       }
     }
   }
+
 };
 
 struct DummyRayCaster: public RayCaster
@@ -346,7 +349,7 @@ struct DummyRayCaster: public RayCaster
 public:
   __device__ __forceinline__
   void rayCast(ProbabilisticVoxel* voxelmap, const Vector3ui &dimensions,
-               const Vector3ui& from, const Vector3ui& to)
+               const Vector3ui& from, const Vector3ui& to, int32_t raycast_voxel_count)
   {
     // override and do nothing
   }

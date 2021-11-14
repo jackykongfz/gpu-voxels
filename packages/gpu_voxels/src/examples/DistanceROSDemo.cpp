@@ -246,7 +246,7 @@ int main(int argc, char* argv[])
       gvl->visualizeMap("raycast_map");
 
       ros::Time t2 = ros::Time::now();
-      ROS_INFO("Insert time = %fs",(t2-t1).toSec());
+      ROS_INFO("Insert time = %fs, explored count = %d, volume = %f",(t2-t1).toSec(), raycast_map->get_vovel_count(), raycast_map->get_explored_volume());
 
       // // Insert the CAMERA data (now in world coordinates) into the list
       // countingVoxelList->insertPointCloud(my_point_cloud, eBVM_OCCUPIED);

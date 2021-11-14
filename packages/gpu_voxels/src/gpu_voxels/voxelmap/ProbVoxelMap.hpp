@@ -35,13 +35,13 @@ namespace voxelmap {
 ProbVoxelMap::ProbVoxelMap(const Vector3ui dim, const float voxel_side_length, const MapType map_type) :
     Base(dim, voxel_side_length, map_type)
 {
-
+  map_res = voxel_side_length;
 }
 
 ProbVoxelMap::ProbVoxelMap(Voxel* dev_data, const Vector3ui dim, const float voxel_side_length, const MapType map_type) :
     Base(dev_data, dim, voxel_side_length, map_type)
 {
-
+  map_res = voxel_side_length;
 }
 
 ProbVoxelMap::~ProbVoxelMap()
@@ -63,17 +63,19 @@ void ProbVoxelMap::insertSensorData(const PointCloud &global_points, const Vecto
   {
     kernelInsertSensorData<<<m_blocks, m_threads>>>(
         m_dev_data, m_voxelmap_size, m_dim, m_voxel_side_length, sensor_pose,
-        global_points.getConstDevicePointer(), global_points.getPointCloudSize(), cut_real_robot, robot_map, robot_voxel_meaning, RayCaster());
+        global_points.getConstDevicePointer(), global_points.getPointCloudSize(), cut_real_robot, robot_map, robot_voxel_meaning, RayCaster(), current_voxel_count);
     CHECK_CUDA_ERROR();
   }
   else
   {
     kernelInsertSensorData<<<m_blocks, m_threads>>>(
         m_dev_data, m_voxelmap_size, m_dim, m_voxel_side_length, sensor_pose,
-        global_points.getConstDevicePointer(), global_points.getPointCloudSize(), cut_real_robot, robot_map, robot_voxel_meaning, DummyRayCaster());
+        global_points.getConstDevicePointer(), global_points.getPointCloudSize(), cut_real_robot, robot_map, robot_voxel_meaning, DummyRayCaster(), current_voxel_count);
     CHECK_CUDA_ERROR();
   }
   HANDLE_CUDA_ERROR(cudaDeviceSynchronize());
+
+  all_voxel_count = all_voxel_count + current_voxel_count;
 }
 
 bool ProbVoxelMap::insertMetaPointCloudWithSelfCollisionCheck(const MetaPointCloud *robot_links,
@@ -106,6 +108,16 @@ size_t ProbVoxelMap::collideWith(const ProbVoxelMap *map, float coll_threshold, 
 {
   DefaultCollider collider(coll_threshold);
   return collisionCheckWithCounterRelativeTransform((TemplateVoxelMap*)map, collider, offset); //does the locking
+}
+
+int32_t get_vovel_count()
+{
+  return all_voxel_count;
+}
+
+float get_explored_volume()
+{
+  return all_voxel_count*m_res*m_res*m_res;
 }
 
 } // end of namespace

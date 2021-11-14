@@ -765,7 +765,7 @@ __global__
 void kernelInsertSensorData(ProbabilisticVoxel* voxelmap, const uint32_t voxelmap_size,
                             const Vector3ui dimensions, const float voxel_side_length, const Vector3f sensor_pose,
                             const Vector3f* sensor_data, const size_t num_points, const bool cut_real_robot,
-                            BitVoxel<length>* robotmap, const uint32_t bit_index, RayCasting rayCaster)
+                            BitVoxel<length>* robotmap, const uint32_t bit_index, RayCasting rayCaster,int32_t raycast_voxel_count)
 {
   for (uint32_t i = blockIdx.x * blockDim.x + threadIdx.x; (i < voxelmap_size) && (i < num_points);
       i += gridDim.x * blockDim.x)
@@ -796,12 +796,14 @@ void kernelInsertSensorData(ProbabilisticVoxel* voxelmap, const uint32_t voxelma
         {
           // sensor does not see robot, so insert data into voxelmap
           // raycasting
-          rayCaster.rayCast(voxelmap, dimensions, sensor_coordinates, integer_coordinates);
+          rayCaster.rayCast(voxelmap, dimensions, sensor_coordinates, integer_coordinates, raycast_voxel_count);
 
           // insert measured data itself afterwards, so it overrides free voxels from raycaster:
           ProbabilisticVoxel* voxel = getVoxelPtr(voxelmap, dimensions, integer_coordinates.x,
                                                   integer_coordinates.y, integer_coordinates.z);
           voxel->updateOccupancy(110);//cSENSOR_MODEL_OCCUPIED
+
+          raycast_voxel_count = raycast_voxel_count + 1;
         }
       }
     }

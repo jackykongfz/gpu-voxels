@@ -61,6 +61,15 @@ public:
 
   size_t collideWith(const voxelmap::BitVectorVoxelMap* map, float coll_threshold = 1.0, const Vector3i &offset = Vector3i());
   size_t collideWith(const voxelmap::ProbVoxelMap* map, float coll_threshold = 1.0, const Vector3i &offset = Vector3i());
+
+  int32_t get_vovel_count();
+  float get_explored_volume();
+
+private:
+  float map_res;
+  int32_t current_voxel_count = 0;
+  int32_t all_voxel_count = 0;
+  float explored_volume = 0.0;
 };
 
 } // end of namespace
