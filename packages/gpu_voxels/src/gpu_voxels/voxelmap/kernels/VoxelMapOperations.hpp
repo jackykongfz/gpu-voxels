@@ -29,6 +29,8 @@
 
 #include "VoxelMapOperationsPBA.hpp"
 
+#include <vector>
+
 namespace gpu_voxels {
 namespace voxelmap {
 
@@ -765,7 +767,8 @@ __global__
 void kernelInsertSensorData(ProbabilisticVoxel* voxelmap, const uint32_t voxelmap_size,
                             const Vector3ui dimensions, const float voxel_side_length, const Vector3f sensor_pose,
                             const Vector3f* sensor_data, const size_t num_points, const bool cut_real_robot,
-                            BitVoxel<length>* robotmap, const uint32_t bit_index, RayCasting rayCaster,int32_t raycast_voxel_count)
+                            BitVoxel<length>* robotmap, const uint32_t bit_index, RayCasting rayCaster, 
+                            int* raycast_voxel_count, int* hash_map)
 {
   for (uint32_t i = blockIdx.x * blockDim.x + threadIdx.x; (i < voxelmap_size) && (i < num_points);
       i += gridDim.x * blockDim.x)
@@ -796,14 +799,27 @@ void kernelInsertSensorData(ProbabilisticVoxel* voxelmap, const uint32_t voxelma
         {
           // sensor does not see robot, so insert data into voxelmap
           // raycasting
-          rayCaster.rayCast(voxelmap, dimensions, sensor_coordinates, integer_coordinates, raycast_voxel_count);
+          rayCaster.rayCast(voxelmap, dimensions, sensor_coordinates, integer_coordinates, raycast_voxel_count[i], hash_map);
+
+          // std::cout << "raycast_voxel_count " << i << " = " << raycast_voxel_count[i];
+          printf("Raycast voxel count %d = %d\n",i,raycast_voxel_count[i]);
 
           // insert measured data itself afterwards, so it overrides free voxels from raycaster:
           ProbabilisticVoxel* voxel = getVoxelPtr(voxelmap, dimensions, integer_coordinates.x,
                                                   integer_coordinates.y, integer_coordinates.z);
           voxel->updateOccupancy(110);//cSENSOR_MODEL_OCCUPIED
 
-          raycast_voxel_count = raycast_voxel_count + 1;
+          int box_index = integer_coordinates.x + integer_coordinates.y*dimensions.y + integer_coordinates.z*dimensions.x*dimensions.z;
+          // point_hashmap.insert(pair<int, >(box_index, pt_in));
+          if(hash_map[box_index] == 1)
+          {
+            continue;
+          }else{
+            hash_map[box_index] = 1;
+            raycast_voxel_count[i]++;
+          }
+
+          // raycast_voxel_count[i] = raycast_voxel_count[i] + 1;
         }
       }
     }

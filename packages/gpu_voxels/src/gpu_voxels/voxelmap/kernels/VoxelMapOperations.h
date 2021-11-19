@@ -32,6 +32,7 @@
 #include <thrust/transform.h>
 
 #include "VoxelMapOperationsPBA.h"
+#include <vector>
 
 namespace gpu_voxels {
 namespace voxelmap {
@@ -222,8 +223,10 @@ public:
 //! raycasting from one point to another marks decreases voxel occupancy along the ray
   __device__ __forceinline__
   void rayCast(ProbabilisticVoxel* voxelmap, const Vector3ui &dimensions,
-               const Vector3ui& from, const Vector3ui& to, int32_t raycast_voxel_count)
+               const Vector3ui& from, const Vector3ui& to, int& raycast_voxel_count, int* hash_map)
   {
+    raycast_voxel_count = 0;
+
     int32_t difference_x = 0;
     int32_t difference_y = 0;
     int32_t difference_z = 0;
@@ -288,7 +291,7 @@ public:
     // number of cells to visit
     n = 1 + difference_x + difference_y + difference_z;
 
-    raycast_voxel_count = n;
+    // raycast_voxel_count = n;
 
     // error between x- and y- difference
     error_xy = difference_x - difference_y;
@@ -313,6 +316,21 @@ public:
       voxel->updateOccupancy(cSENSOR_MODEL_FREE);
 
       //decreaseOccupancy(voxel, cSENSOR_MODEL_FREE); // todo: replace with "free" of sensor model
+
+        //check if hashmap has value
+        // int ind_x = (round((x )/hash_cubesize));
+        // int ind_y = (round((y )/hash_cubesize));
+        // int ind_z = (round((z )/hash_cubesize));
+
+        int box_index = x + y*dimensions.y + z*dimensions.x*dimensions.z;
+        // point_hashmap.insert(pair<int, >(box_index, pt_in));
+        if(hash_map[box_index] == 1)
+        {
+          continue;
+        }else{
+          hash_map[box_index] = 1;
+          raycast_voxel_count++;
+        }
 
 
       if ((error_xy > 0) && (error_xz > 0))
@@ -349,7 +367,7 @@ struct DummyRayCaster: public RayCaster
 public:
   __device__ __forceinline__
   void rayCast(ProbabilisticVoxel* voxelmap, const Vector3ui &dimensions,
-               const Vector3ui& from, const Vector3ui& to, int32_t raycast_voxel_count)
+               const Vector3ui& from, const Vector3ui& to, int& raycast_voxel_count,int* hash_map)
   {
     // override and do nothing
   }
@@ -392,7 +410,7 @@ __global__
 void kernelInsertSensorData(ProbabilisticVoxel* voxelmap, const uint32_t voxelmap_size,
                             const Vector3ui dimensions, const float voxel_side_length, const Vector3f sensor_pose,
                             const Vector3f* sensor_data, const size_t num_points, const bool cut_real_robot,
-                            BitVoxel<length>* robotmap, const uint32_t bit_index, RayCasting rayCaster);
+                            BitVoxel<length>* robotmap, const uint32_t bit_index, RayCasting rayCaster, int* raycast_voxel_count, int* hash_map);
 
 /*!
  * Collide two voxel maps.

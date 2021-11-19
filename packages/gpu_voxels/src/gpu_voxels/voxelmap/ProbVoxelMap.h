@@ -70,6 +70,7 @@ private:
   int32_t current_voxel_count = 0;
   int32_t all_voxel_count = 0;
   float explored_volume = 0.0;
+  int* hash_map;
 };
 
 } // end of namespace

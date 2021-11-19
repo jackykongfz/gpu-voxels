@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
   float yaw = icl_core::config::paramOptDefault<float>("yaw", 0.0f) * 3.141592f / 180.0f;
   tf = Matrix4f::createFromRotationAndTranslation(Matrix3f::createFromRPY(0+ roll, 0 + pitch, 0 + yaw), camera_offsets);
 
-  std::string point_cloud_topic = icl_core::config::paramOptDefault<std::string>("points-topic", "/camera/depth/points");
+  std::string point_cloud_topic = icl_core::config::paramOptDefault<std::string>("points-topic", "/pcl_render_node/cloud");
   LOGGING_INFO(Gpu_voxels, "DistanceROSDemo start. Point-cloud topic: " << point_cloud_topic << endl);
 
   // Generate a GPU-Voxels instance:
